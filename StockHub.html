@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StockHub — Warehouse Product Management</title>
+<style>
+  :root {
+    --primary: #0D9488;
+    --primary-dark: #0B7C71;
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --text: #1E293B;
+    --muted-text: #64748B;
+    --border: #E2E8F0;
+    --green: #16A34A;
+    --amber: #F59E0B;
+    --red: #DC2626;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.04);
+    --shadow-md: 0 4px 12px rgba(15,23,42,.08);
+    --shadow-lg: 0 12px 32px rgba(15,23,42,.12);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input, select { font-family: inherit; font-size: 14px; }
+
+  /* ---------------- AUTH ---------------- */
+  .auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(1200px 600px at 100% 0%, rgba(13,148,136,.10), transparent 60%),
+      radial-gradient(900px 500px at 0% 100%, rgba(13,148,136,.08), transparent 55%),
+      var(--bg);
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px;
+    box-shadow: var(--shadow-lg);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .brand-logo {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--primary), #14b8a6);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; box-shadow: var(--shadow-md);
+  }
+  .brand-name { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+  .auth-sub { color: var(--muted-text); font-size: 14px; margin-bottom: 24px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155; }
+  .field input {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+    color: var(--text);
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13,148,136,.15);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-weight: 600; font-size: 14px;
+    transition: transform .08s, box-shadow .15s, background .15s, border-color .15s, color .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--primary); color: #fff; box-shadow: var(--shadow-sm); }
+  .btn-primary:hover { background: var(--primary-dark); box-shadow: var(--shadow-md); }
+  .btn-block { width: 100%; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: #f1f5f9; }
+  .btn-danger { background: #fef2f2; color: var(--red); border: 1px solid #fecaca; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 8px; }
+
+  .auth-toggle { text-align: center; margin-top: 18px; font-size: 14px; color: var(--muted-text); }
+  .auth-toggle a { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: none; }
+  .auth-toggle a:hover { text-decoration: underline; }
+
+  .inline-error {
+    background: #fef2f2; color: var(--red);
+    border: 1px solid #fecaca;
+    padding: 10px 12px; border-radius: 10px;
+    font-size: 13px; margin-bottom: 16px; display: none;
+  }
+
+  /* ---------------- APP LAYOUT ---------------- */
+  .app { display: none; min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 250px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+    flex-shrink: 0;
+  }
+  .sidebar .brand { margin-bottom: 28px; padding: 0 8px; }
+  .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 10px;
+    color: var(--muted-text); font-weight: 500; font-size: 14px;
+    transition: background .12s, color .12s;
+    text-align: left; width: 100%;
+  }
+  .nav-item svg { flex-shrink: 0; }
+  .nav-item:hover { background: #f1f5f9; color: var(--text); }
+  .nav-item.active { background: rgba(13,148,136,.10); color: var(--primary); font-weight: 600; }
+
+  .sidebar-user {
+    border-top: 1px solid var(--border);
+    padding-top: 14px; margin-top: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #14b8a6);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .sidebar-user .u-name { font-size: 13px; font-weight: 600; }
+  .sidebar-user .u-email { font-size: 11px; color: var(--muted-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+
+  .main { flex: 1; min-width: 0; }
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 20;
+  }
+  .topbar h1 { font-size: 20px; font-weight: 700; letter-spacing: -.4px; }
+  .topbar .sub { font-size: 13px; color: var(--muted-text); }
+  .content { padding: 28px; }
+
+  .hamburger { display: none; }
+
+  /* ---------------- STAT CARDS ---------------- */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    position: relative; overflow: hidden;
+    transition: transform .12s, box-shadow .15s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .stat-card::after {
+    content: ""; position: absolute; right: -30px; top: -30px;
+    width: 110px; height: 110px; border-radius: 50%;
+    background: var(--grad, linear-gradient(135deg, rgba(13,148,136,.12), rgba(20,184,166,.04)));
+  }
+  .stat-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; margin-bottom: 14px; position: relative; z-index: 1;
+  }
+  .stat-label { font-size: 13px; color: var(--muted-text); font-weight: 500; position: relative; z-index: 1; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -.6px; margin-top: 2px; position: relative; z-index: 1; }
+
+  /* ---------------- CARD / PANEL ---------------- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+  }
+  .panel-head {
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .panel-head h2 { font-size: 16px; font-weight: 700; }
+  .panel-head .desc { font-size: 13px; color: var(--muted-text); margin-top: 2px; }
+  .panel-body { padding: 20px; }
+
+  /* ---------------- TOOLBAR ---------------- */
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .search-box { position: relative; flex: 1; min-width: 200px; }
+  .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted-text); }
+  .search-box input {
+    width: 100%; padding: 10px 12px 10px 38px;
+    border: 1px solid var(--border); border-radius: 10px; background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13,148,136,.15); }
+  select.filter {
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text); cursor: pointer;
+  }
+  select.filter:focus { outline: none; border-color: var(--primary); }
+
+  /* ---------------- TABLE ---------------- */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted-text); font-weight: 600; padding: 12px 14px; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background .1s; }
+  tbody tr:hover { background: #f8fafc; }
+  .prod-name { font-weight: 600; }
+  .prod-sku { font-size: 12px; color: var(--muted-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .badge-green { background: rgba(22,163,74,.12); color: var(--green); }
+  .badge-green .dot { background: var(--green); }
+  .badge-amber { background: rgba(245,158,11,.14); color: #B45309; }
+  .badge-amber .dot { background: var(--amber); }
+  .badge-red { background: rgba(220,38,38,.12); color: var(--red); }
+  .badge-red .dot { background: var(--red); }
+  .badge-cat { background: #f1f5f9; color: #475569; }
+
+  .row-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted-text); transition: background .12s, color .12s;
+  }
+  .icon-btn:hover { background: #f1f5f9; color: var(--text); }
+  .icon-btn.danger:hover { background: #fef2f2; color: var(--red); }
+
+  .empty {
+    text-align: center; padding: 48px 20px; color: var(--muted-text);
+  }
+  .empty svg { margin-bottom: 12px; opacity: .5; }
+
+  /* ---------------- BIN MAP ---------------- */
+  .bin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+  .bin-cell {
+    border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+    background: var(--surface); position: relative; overflow: hidden;
+    transition: transform .12s, box-shadow .15s;
+  }
+  .bin-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .bin-fill { position: absolute; left: 0; bottom: 0; width: 100%; opacity: .16; transition: height .4s; z-index: 0; }
+  .bin-cell > * { position: relative; z-index: 1; }
+  .bin-zone { font-weight: 700; font-size: 16px; }
+  .bin-meta { font-size: 12px; color: var(--muted-text); margin-top: 2px; }
+  .bin-pct { font-size: 22px; font-weight: 700; margin-top: 10px; letter-spacing: -.5px; }
+
+  /* ---------------- RESTOCK ---------------- */
+  .restock-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .restock-item:last-child { border-bottom: none; }
+  .restock-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+  .restock-name { font-weight: 600; font-size: 14px; }
+  .restock-days { font-size: 13px; font-weight: 600; }
+  .progress { height: 9px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 999px; transition: width .5s ease; }
+
+  /* ---------------- ACTIVITY LOG ---------------- */
+  .log-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .log-item:last-child { border-bottom: none; }
+  .log-dot {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .log-add { background: var(--green); }
+  .log-edit { background: var(--amber); }
+  .log-delete { background: var(--red); }
+  .log-text { font-size: 14px; }
+  .log-time { font-size: 12px; color: var(--muted-text); margin-top: 1px; }
+
+  /* barcode cell */
+  .barcode-holder { background: #fff; border-radius: 6px; padding: 2px 4px; display: inline-block; }
+  .barcode-holder svg { display: block; height: 40px; }
+
+  /* ---------------- MODAL ---------------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,.45);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: 18px; width: 100%; max-width: 560px;
+    box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;
+    animation: pop .18s ease;
+  }
+  @keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-head h3 { font-size: 17px; font-weight: 700; }
+  .modal-body { padding: 24px; }
+  .modal-foot { padding: 18px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  /* ---------------- TOAST ---------------- */
+  .toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 12px; padding: 13px 16px; box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 11px; min-width: 260px; max-width: 340px;
+    animation: slideIn .25s ease;
+  }
+  @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast.out { animation: slideOut .25s ease forwards; }
+  @keyframes slideOut { to { transform: translateX(120%); opacity: 0; } }
+  .toast.success { border-left-color: var(--green); }
+  .toast.error { border-left-color: var(--red); }
+  .toast-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+  .toast.success .toast-icon { background: var(--green); }
+  .toast.error .toast-icon { background: var(--red); }
+  .toast-msg { font-size: 14px; font-weight: 500; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .section-hint { font-size: 13px; color: var(--muted-text); margin-bottom: 16px; }
+
+  /* ---------------- RESPONSIVE ---------------- */
+  @media (max-width: 860px) {
+    .sidebar {
+      position: fixed; z-index: 60; left: 0; top: 0; transform: translateX(-100%);
+      transition: transform .25s ease; box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .hamburger { display: flex; }
+    .scrim { position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 55; display: none; }
+    .scrim.open { display: block; }
+    .form-grid { grid-template-columns: 1fr; }
+    .content { padding: 18px; }
+    .topbar { padding: 14px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div class="auth-wrap" id="authScreen">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+      </div>
+      <div class="brand-name">StockHub</div>
+    </div>
+    <p class="auth-sub" id="authSub">Sign in to manage your warehouse inventory.</p>
+
+    <div class="inline-error" id="authError"></div>
+
+    <!-- Login -->
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Log in</button>
+      <div class="auth-toggle">Don't have an account? <a id="toSignup">Sign up</a></div>
+    </form>
+
+    <!-- Signup -->
+    <form id="signupForm" style="display:none;">
+      <div class="field">
+        <label for="signupName">Full name</label>
+        <input type="text" id="signupName" placeholder="Jane Warehouse" autocomplete="name" required />
+      </div>
+      <div class="field">
+        <label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" placeholder="you@company.com" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" placeholder="Choose a password" autocomplete="new-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      <div class="auth-toggle">Already have an account? <a id="toLogin">Log in</a></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+  <div class="scrim" id="scrim"></div>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+        </div>
+        <div class="brand-name">StockHub</div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" data-view="products">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          Products
+        </button>
+        <button class="nav-item" data-view="binmap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Bin Map
+        </button>
+        <button class="nav-item" data-view="restock">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Restock Predictor
+        </button>
+        <button class="nav-item" data-view="activity">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Activity Log
+        </button>
+      </nav>
+      <div class="sidebar-user">
+        <div class="avatar" id="userAvatar">U</div>
+        <div style="flex:1; min-width:0;">
+          <div class="u-name" id="userName">User</div>
+          <div class="u-email" id="userEmail">user@email.com</div>
+        </div>
+        <button class="icon-btn danger" id="logoutBtn" title="Log out">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="icon-btn hamburger" id="hamburger" title="Menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="sub" id="pageSub">Overview of your warehouse inventory</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="addProductTop">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Product
+        </button>
+      </div>
+
+      <div class="content">
+        <!-- DASHBOARD -->
+        <section class="view active" id="view-dashboard">
+          <div class="stat-grid">
+            <div class="stat-card" style="--grad:linear-gradient(135deg,rgba(13,148,136,.16),rgba(20,184,166,.05));">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#0D9488,#14b8a6);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 3l4 4-4 4M7 21l-4-4 4-4"/></svg>
+              </div>
+              <div class="stat-label">Total SKUs</div>
+              <div class="stat-value" id="statSkus">0</div>
+            </div>
+            <div class="stat-card" style="--grad:linear-gradient(135deg,rgba(245,158,11,.18),rgba(245,158,11,.04));">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#F59E0B,#fbbf24);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="stat-label">Low-Stock Items</div>
+              <div class="stat-value" id="statLow">0</div>
+            </div>
+            <div class="stat-card" style="--grad:linear-gradient(135deg,rgba(22,163,74,.16),rgba(22,163,74,.04));">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#16A34A,#22c55e);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="stat-label">Total Inventory Value</div>
+              <div class="stat-value" id="statValue">$0</div>
+            </div>
+            <div class="stat-card" style="--grad:linear-gradient(135deg,rgba(30,41,59,.12),rgba(30,41,59,.03));">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#334155,#64748b);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
+              </div>
+              <div class="stat-label">Total Units in Stock</div>
+              <div class="stat-value" id="statUnits">0</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2>Low-Stock Alerts</h2><div class="desc">Products at or below their reorder threshold</div></div>
+            </div>
+            <div class="panel-body" style="padding:0;">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Product</th><th>Category</th><th>Qty</th><th>Threshold</th><th>Status</th></tr>
+                  </thead>
+                  <tbody id="lowStockBody"></tbody>
+                </table>
+              </div>
+              <div class="empty" id="lowStockEmpty" style="display:none;">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <div>All stocked up — no low-stock items.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PRODUCTS -->
+        <section class="view" id="view-products">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="toolbar" style="flex:1;">
+                <div class="search-box">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" id="searchInput" placeholder="Search by name or SKU..." />
+                </div>
+                <select class="filter" id="categoryFilter"><option value="">All categories</option></select>
+                <select class="filter" id="statusFilter">
+                  <option value="">All statuses</option>
+                  <option value="in">In stock</option>
+                  <option value="low">Low stock</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+            </div>
+            <div class="panel-body" style="padding:0;">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Product</th><th>Category</th><th>Qty</th><th>Price</th><th>Bin</th><th>Status</th><th>Barcode</th><th></th></tr>
+                  </thead>
+                  <tbody id="productsBody"></tbody>
+                </table>
+              </div>
+              <div class="empty" id="productsEmpty" style="display:none;">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
+                <div>No products found. Add your first product to get started.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- BIN MAP -->
+        <section class="view" id="view-binmap">
+          <p class="section-hint">Each zone is grouped by bin location and colored by stock fill % (current quantity vs. the highest quantity seen in that zone).</p>
+          <div class="panel">
+            <div class="panel-head"><div><h2>Warehouse Bin / Shelf Map</h2><div class="desc">Visual overview of storage zones</div></div>
+              <div style="display:flex; gap:14px; font-size:12px; color:var(--muted-text); flex-wrap:wrap;">
+                <span class="badge badge-red"><span class="dot"></span>Low fill</span>
+                <span class="badge badge-amber"><span class="dot"></span>Medium</span>
+                <span class="badge badge-green"><span class="dot"></span>High fill</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="bin-grid" id="binGrid"></div>
+              <div class="empty" id="binEmpty" style="display:none;">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <div>No bin locations yet. Add products with a bin location.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RESTOCK -->
+        <section class="view" id="view-restock">
+          <p class="section-hint">Estimated days of stock left = quantity ÷ daily usage rate. Bars turn red as items approach depletion.</p>
+          <div class="panel">
+            <div class="panel-head"><div><h2>Restock Predictor</h2><div class="desc">Forecasted days until each product runs out</div></div></div>
+            <div class="panel-body" id="restockBody"></div>
+            <div class="empty" id="restockEmpty" style="display:none;">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              <div>Add products with a usage rate to see restock forecasts.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTIVITY -->
+        <section class="view" id="view-activity">
+          <div class="panel">
+            <div class="panel-head"><div><h2>Activity Log</h2><div class="desc">Recent add, edit and delete actions</div></div>
+              <button class="btn btn-ghost btn-sm" id="clearLog">Clear log</button>
+            </div>
+            <div class="panel-body" id="activityBody"></div>
+            <div class="empty" id="activityEmpty" style="display:none;">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <div>No activity yet.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRODUCT MODAL ============ -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Add Product</h3>
+      <button class="icon-btn" id="modalClose">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="productForm">
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="pName">Product name</label>
+            <input type="text" id="pName" required placeholder="e.g. Steel Bracket M8" />
+          </div>
+          <div class="field">
+            <label for="pSku">SKU</label>
+            <input type="text" id="pSku" required placeholder="e.g. SB-M8-001" />
+          </div>
+          <div class="field">
+            <label for="pCategory">Category</label>
+            <input type="text" id="pCategory" required placeholder="e.g. Hardware" list="catList" />
+            <datalist id="catList"></datalist>
+          </div>
+          <div class="field">
+            <label for="pQty">Quantity</label>
+            <input type="number" id="pQty" required min="0" step="1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="pPrice">Unit price ($)</label>
+            <input type="number" id="pPrice" required min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="field">
+            <label for="pBin">Bin location</label>
+            <input type="text" id="pBin" required placeholder="e.g. A1" />
+          </div>
+          <div class="field">
+            <label for="pThreshold">Reorder threshold</label>
+            <input type="number" id="pThreshold" required min="0" step="1" placeholder="0" />
+          </div>
+          <div class="field full">
+            <label for="pUsage">Usage rate (units per day)</label>
+            <input type="number" id="pUsage" required min="0" step="0.1" placeholder="e.g. 2.5" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="modalCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modalSave">Save product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------------- Storage keys ----------------
+  var K_ACCOUNTS = "stockhub_accounts";
+  var K_SESSION  = "stockhub_session";
+  var K_PRODUCTS = "stockhub_products";
+  var K_LOG      = "stockhub_log";
+
+  // ---------------- Helpers ----------------
+  function $(id) { return document.getElementById(id); }
+  function read(key, fallback) {
+    try { var v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
+    catch (e) { return fallback; }
+  }
+  function write(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function money(n) {
+    return "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---------------- Self-contained Code128B barcode (no external libs) ----------------
+  var C128 = ("212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112").split(" ");
+  function renderBarcode(svg, code, opts) {
+    opts = opts || {};
+    var w = opts.width || 1.3, h = opts.height || 34, fs = opts.fontSize || 10,
+        m = opts.margin || 2, show = opts.displayValue !== false;
+    var data = String(code).replace(/[^\x20-\x7f]/g, "");
+    if (!data) data = "N/A";
+    var codes = [104], sum = 104, i;               // 104 = Start Code B
+    for (i = 0; i < data.length; i++) {
+      var v = data.charCodeAt(i) - 32;
+      codes.push(v); sum += v * (i + 1);
+    }
+    codes.push(sum % 103);                          // checksum
+    codes.push(106);                                // stop
+    var widths = codes.map(function (c) { return C128[c]; }).join("");
+    var total = 0;
+    for (i = 0; i < widths.length; i++) total += +widths[i];
+    var svgW = total * w + m * 2, textH = show ? fs + 3 : 0, svgH = h + m * 2 + textH;
+    var x = m, black = true, rects = "";
+    for (i = 0; i < widths.length; i++) {
+      var bw = (+widths[i]) * w;
+      if (black) rects += '<rect x="' + x + '" y="' + m + '" width="' + bw + '" height="' + h + '" fill="#000"/>';
+      x += bw; black = !black;
+    }
+    svg.setAttribute("width", svgW);
+    svg.setAttribute("height", svgH);
+    svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
+    var inner = rects;
+    if (show) {
+      inner += '<text x="' + (svgW / 2) + '" y="' + (h + m + fs) + '" text-anchor="middle" ' +
+               'font-family="ui-monospace,Menlo,monospace" font-size="' + fs + '" fill="#000">' +
+               escapeHtml(data) + '</text>';
+    }
+    svg.innerHTML = inner;
+  }
+
+  // ---------------- Toast ----------------
+  function toast(msg, type) {
+    type = type || "success";
+    var wrap = $("toastWrap");
+    var el = document.createElement("div");
+    el.className = "toast " + type;
+    var icon = type === "error"
+      ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+      : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    el.innerHTML = '<div class="toast-icon">' + icon + '</div><div class="toast-msg">' + escapeHtml(msg) + '</div>';
+    wrap.appendChild(el);
+    setTimeout(function () {
+      el.classList.add("out");
+      setTimeout(function () { el.remove(); }, 260);
+    }, 2600);
+  }
+
+  // ---------------- Activity log ----------------
+  function logAction(type, text) {
+    var log = read(K_LOG, []);
+    log.unshift({ type: type, text: text, time: Date.now() });
+    if (log.length > 100) log = log.slice(0, 100);
+    write(K_LOG, log);
+  }
+  function timeAgo(ts) {
+    var s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return "just now";
+    var m = Math.floor(s / 60); if (m < 60) return m + "m ago";
+    var h = Math.floor(m / 60); if (h < 24) return h + "h ago";
+    var d = Math.floor(h / 24); if (d < 7) return d + "d ago";
+    return new Date(ts).toLocaleDateString();
+  }
+
+  // ---------------- AUTH ----------------
+  var authScreen = $("authScreen"), appEl = $("app");
+  var loginForm = $("loginForm"), signupForm = $("signupForm");
+  var authError = $("authError"), authSub = $("authSub");
+
+  function showAuthError(msg) { authError.textContent = msg; authError.style.display = "block"; }
+  function clearAuthError() { authError.style.display = "none"; }
+
+  $("toSignup").addEventListener("click", function () {
+    loginForm.style.display = "none"; signupForm.style.display = "block";
+    authSub.textContent = "Create an account to start managing inventory.";
+    clearAuthError();
+  });
+  $("toLogin").addEventListener("click", function () {
+    signupForm.style.display = "none"; loginForm.style.display = "block";
+    authSub.textContent = "Sign in to manage your warehouse inventory.";
+    clearAuthError();
+  });
+
+  signupForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearAuthError();
+    var name = $("signupName").value.trim();
+    var email = $("signupEmail").value.trim().toLowerCase();
+    var pass = $("signupPassword").value;
+    var accounts = read(K_ACCOUNTS, []);
+    if (accounts.some(function (a) { return a.email === email; })) {
+      showAuthError("An account with this email already exists. Please log in.");
+      return;
+    }
+    accounts.push({ name: name, email: email, password: pass });
+    write(K_ACCOUNTS, accounts);
+    write(K_SESSION, { email: email });
+    toast("Account created — welcome, " + name.split(" ")[0] + "!");
+    signupForm.reset();
+    enterApp();
+  });
+
+  loginForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearAuthError();
+    var email = $("loginEmail").value.trim().toLowerCase();
+    var pass = $("loginPassword").value;
+    var accounts = read(K_ACCOUNTS, []);
+    var acc = accounts.find(function (a) { return a.email === email; });
+    if (!acc) { showAuthError("Account not found, please sign up"); return; }
+    if (acc.password !== pass) { showAuthError("Incorrect password"); return; }
+    write(K_SESSION, { email: email });
+    loginForm.reset();
+    toast("Welcome back, " + acc.name.split(" ")[0] + "!");
+    enterApp();
+  });
+
+  $("logoutBtn").addEventListener("click", function () {
+    localStorage.removeItem(K_SESSION);
+    appEl.style.display = "none";
+    authScreen.style.display = "flex";
+    toast("Logged out successfully.");
+  });
+
+  function currentUser() {
+    var sess = read(K_SESSION, null);
+    if (!sess) return null;
+    var accounts = read(K_ACCOUNTS, []);
+    return accounts.find(function (a) { return a.email === sess.email; }) || null;
+  }
+
+  function enterApp() {
+    var user = currentUser();
+    if (!user) { authScreen.style.display = "flex"; appEl.style.display = "none"; return; }
+    authScreen.style.display = "none";
+    appEl.style.display = "block";
+    $("userName").textContent = user.name;
+    $("userEmail").textContent = user.email;
+    $("userAvatar").textContent = (user.name.trim()[0] || "U").toUpperCase();
+    renderAll();
+  }
+
+  // ---------------- Products ----------------
+  function getProducts() { return read(K_PRODUCTS, []); }
+  function setProducts(p) { write(K_PRODUCTS, p); }
+
+  function stockStatus(p) {
+    var q = Number(p.quantity), t = Number(p.reorder_threshold);
+    if (q <= 0 || q <= t * 0.5) return "critical";
+    if (q <= t) return "low";
+    return "in";
+  }
+  function statusBadge(status) {
+    if (status === "critical") return '<span class="badge badge-red"><span class="dot"></span>Critical</span>';
+    if (status === "low") return '<span class="badge badge-amber"><span class="dot"></span>Low stock</span>';
+    return '<span class="badge badge-green"><span class="dot"></span>In stock</span>';
+  }
+
+  // ---------------- Modal ----------------
+  var productModal = $("productModal"), productForm = $("productForm"), editingId = null;
+
+  function openModal(product) {
+    editingId = product ? product.id : null;
+    $("modalTitle").textContent = product ? "Edit Product" : "Add Product";
+    $("modalSave").textContent = product ? "Save changes" : "Add product";
+    refreshCatList();
+    if (product) {
+      $("pName").value = product.name;
+      $("pSku").value = product.sku;
+      $("pCategory").value = product.category;
+      $("pQty").value = product.quantity;
+      $("pPrice").value = product.price;
+      $("pBin").value = product.bin_location;
+      $("pThreshold").value = product.reorder_threshold;
+      $("pUsage").value = product.usage_rate;
+    } else {
+      productForm.reset();
+    }
+    productModal.classList.add("open");
+    setTimeout(function () { $("pName").focus(); }, 50);
+  }
+  function closeModal() { productModal.classList.remove("open"); editingId = null; }
+
+  $("modalClose").addEventListener("click", closeModal);
+  $("modalCancel").addEventListener("click", closeModal);
+  productModal.addEventListener("click", function (e) { if (e.target === productModal) closeModal(); });
+  $("addProductTop").addEventListener("click", function () { openModal(null); });
+
+  productForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var data = {
+      name: $("pName").value.trim(),
+      sku: $("pSku").value.trim(),
+      category: $("pCategory").value.trim(),
+      quantity: Math.max(0, parseInt($("pQty").value, 10) || 0),
+      price: Math.max(0, parseFloat($("pPrice").value) || 0),
+      bin_location: $("pBin").value.trim().toUpperCase(),
+      reorder_threshold: Math.max(0, parseInt($("pThreshold").value, 10) || 0),
+      usage_rate: Math.max(0, parseFloat($("pUsage").value) || 0)
+    };
+    var products = getProducts();
+    if (editingId) {
+      var idx = products.findIndex(function (p) { return p.id === editingId; });
+      if (idx > -1) {
+        products[idx] = Object.assign(products[idx], data);
+        logAction("edit", 'Edited product "' + data.name + '"');
+        toast("Product updated.");
+      }
+    } else {
+      data.id = uid();
+      products.push(data);
+      logAction("add", 'Added product "' + data.name + '" (' + data.sku + ')');
+      toast("Product added.");
+    }
+    setProducts(products);
+    closeModal();
+    renderAll();
+  });
+
+  // ---------------- Delete ----------------
+  function deleteProduct(id) {
+    var products = getProducts();
+    var p = products.find(function (x) { return x.id === id; });
+    if (!p) return;
+    if (!confirm('Delete "' + p.name + '"? This cannot be undone.')) return;
+    products = products.filter(function (x) { return x.id !== id; });
+    setProducts(products);
+    logAction("delete", 'Deleted product "' + p.name + '"');
+    toast("Product deleted.", "error");
+    renderAll();
+  }
+
+  // ---------------- Category list ----------------
+  function categories() {
+    var set = {};
+    getProducts().forEach(function (p) { if (p.category) set[p.category] = true; });
+    return Object.keys(set).sort();
+  }
+  function refreshCatList() {
+    var dl = $("catList");
+    dl.innerHTML = categories().map(function (c) { return '<option value="' + escapeHtml(c) + '">'; }).join("");
+  }
+  function refreshCategoryFilter() {
+    var sel = $("categoryFilter");
+    var current = sel.value;
+    sel.innerHTML = '<option value="">All categories</option>' +
+      categories().map(function (c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join("");
+    sel.value = current;
+  }
+
+  // ---------------- Renders ----------------
+  function renderStats() {
+    var products = getProducts();
+    $("statSkus").textContent = products.length;
+    var low = products.filter(function (p) { return stockStatus(p) !== "in"; }).length;
+    $("statLow").textContent = low;
+    var value = products.reduce(function (s, p) { return s + p.quantity * p.price; }, 0);
+    $("statValue").textContent = money(value);
+    var units = products.reduce(function (s, p) { return s + p.quantity; }, 0);
+    $("statUnits").textContent = units.toLocaleString();
+
+    // Low stock table
+    var body = $("lowStockBody"), empty = $("lowStockEmpty");
+    var lowItems = products.filter(function (p) { return stockStatus(p) !== "in"; })
+      .sort(function (a, b) { return a.quantity - b.quantity; });
+    if (lowItems.length === 0) {
+      body.innerHTML = ""; empty.style.display = "block";
+    } else {
+      empty.style.display = "none";
+      body.innerHTML = lowItems.map(function (p) {
+        return '<tr><td><div class="prod-name">' + escapeHtml(p.name) + '</div><div class="prod-sku">' + escapeHtml(p.sku) + '</div></td>' +
+          '<td><span class="badge badge-cat">' + escapeHtml(p.category) + '</span></td>' +
+          '<td>' + p.quantity + '</td><td>' + p.reorder_threshold + '</td>' +
+          '<td>' + statusBadge(stockStatus(p)) + '</td></tr>';
+      }).join("");
+    }
+  }
+
+  function renderProducts() {
+    var products = getProducts();
+    var term = $("searchInput").value.trim().toLowerCase();
+    var catF = $("categoryFilter").value;
+    var statF = $("statusFilter").value;
+
+    var filtered = products.filter(function (p) {
+      if (term && p.name.toLowerCase().indexOf(term) === -1 && p.sku.toLowerCase().indexOf(term) === -1) return false;
+      if (catF && p.category !== catF) return false;
+      if (statF && stockStatus(p) !== statF) return false;
+      return true;
+    });
+
+    var body = $("productsBody"), empty = $("productsEmpty");
+    if (filtered.length === 0) {
+      body.innerHTML = ""; empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    body.innerHTML = filtered.map(function (p) {
+      return '<tr>' +
+        '<td><div class="prod-name">' + escapeHtml(p.name) + '</div><div class="prod-sku">' + escapeHtml(p.sku) + '</div></td>' +
+        '<td><span class="badge badge-cat">' + escapeHtml(p.category) + '</span></td>' +
+        '<td>' + p.quantity + '</td>' +
+        '<td>' + money(p.price) + '</td>' +
+        '<td><span class="prod-sku">' + escapeHtml(p.bin_location) + '</span></td>' +
+        '<td>' + statusBadge(stockStatus(p)) + '</td>' +
+        '<td><span class="barcode-holder"><svg class="barcode" data-code="' + escapeHtml(p.sku) + '"></svg></span></td>' +
+        '<td><div class="row-actions">' +
+          '<button class="icon-btn" data-edit="' + p.id + '" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+          '<button class="icon-btn danger" data-del="' + p.id + '" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join("");
+
+    // barcodes
+    body.querySelectorAll(".barcode").forEach(function (svg) {
+      var code = svg.getAttribute("data-code") || "N/A";
+      try {
+        renderBarcode(svg, code, { width: 1.3, height: 34, displayValue: true, fontSize: 10, margin: 2 });
+      } catch (e) { svg.outerHTML = '<span class="prod-sku">' + escapeHtml(code) + '</span>'; }
+    });
+
+    body.querySelectorAll("[data-edit]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var p = getProducts().find(function (x) { return x.id === b.getAttribute("data-edit"); });
+        if (p) openModal(p);
+      });
+    });
+    body.querySelectorAll("[data-del]").forEach(function (b) {
+      b.addEventListener("click", function () { deleteProduct(b.getAttribute("data-del")); });
+    });
+  }
+
+  function renderBinMap() {
+    var products = getProducts();
+    var grid = $("binGrid"), empty = $("binEmpty");
+    var zones = {};
+    products.forEach(function (p) {
+      var z = p.bin_location || "—";
+      if (!zones[z]) zones[z] = { qty: 0, items: 0 };
+      zones[z].qty += p.quantity;
+      zones[z].items += 1;
+    });
+    var keys = Object.keys(zones).sort();
+    if (keys.length === 0) { grid.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    var maxQty = Math.max.apply(null, keys.map(function (k) { return zones[k].qty; })) || 1;
+    grid.innerHTML = keys.map(function (z) {
+      var pct = Math.round((zones[z].qty / maxQty) * 100);
+      var color = pct <= 33 ? "var(--red)" : (pct <= 66 ? "var(--amber)" : "var(--green)");
+      return '<div class="bin-cell">' +
+        '<div class="bin-fill" style="height:' + pct + '%; background:' + color + ';"></div>' +
+        '<div class="bin-zone">' + escapeHtml(z) + '</div>' +
+        '<div class="bin-meta">' + zones[z].items + ' SKU' + (zones[z].items !== 1 ? 's' : '') + ' · ' + zones[z].qty + ' units</div>' +
+        '<div class="bin-pct" style="color:' + color + ';">' + pct + '%</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderRestock() {
+    var products = getProducts().slice();
+    var body = $("restockBody"), empty = $("restockEmpty");
+    var usable = products.filter(function (p) { return p.usage_rate > 0; });
+    usable.sort(function (a, b) { return (a.quantity / a.usage_rate) - (b.quantity / b.usage_rate); });
+    if (usable.length === 0) { body.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    body.innerHTML = usable.map(function (p) {
+      var days = p.usage_rate > 0 ? (p.quantity / p.usage_rate) : Infinity;
+      var daysR = Math.round(days * 10) / 10;
+      // scale bar against 30-day horizon
+      var pct = Math.min(100, (days / 30) * 100);
+      var color = days <= 7 ? "var(--red)" : (days <= 14 ? "var(--amber)" : "var(--green)");
+      var label = days <= 7 ? "Reorder now" : (days <= 14 ? "Order soon" : "Healthy");
+      return '<div class="restock-item">' +
+        '<div class="restock-head">' +
+          '<div><span class="restock-name">' + escapeHtml(p.name) + '</span> <span class="prod-sku">· ' + escapeHtml(p.sku) + '</span></div>' +
+          '<div class="restock-days" style="color:' + color + ';">' + daysR + ' days left · ' + label + '</div>' +
+        '</div>' +
+        '<div class="progress"><div class="progress-bar" style="width:' + pct + '%; background:' + color + ';"></div></div>' +
+        '<div class="bin-meta" style="margin-top:6px;">Qty ' + p.quantity + ' · ' + p.usage_rate + '/day · Bin ' + escapeHtml(p.bin_location) + '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderActivity() {
+    var log = read(K_LOG, []);
+    var body = $("activityBody"), empty = $("activityEmpty");
+    if (log.length === 0) { body.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    var icons = {
+      add: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+      edit: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      "delete": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>'
+    };
+    body.innerHTML = log.map(function (l) {
+      return '<div class="log-item">' +
+        '<div class="log-dot log-' + l.type + '">' + (icons[l.type] || icons.edit) + '</div>' +
+        '<div><div class="log-text">' + escapeHtml(l.text) + '</div><div class="log-time">' + timeAgo(l.time) + '</div></div>' +
+      '</div>';
+    }).join("");
+  }
+
+  $("clearLog").addEventListener("click", function () {
+    if (!confirm("Clear the entire activity log?")) return;
+    write(K_LOG, []);
+    renderActivity();
+    toast("Activity log cleared.");
+  });
+
+  function renderAll() {
+    refreshCategoryFilter();
+    renderStats();
+    renderProducts();
+    renderBinMap();
+    renderRestock();
+    renderActivity();
+  }
+
+  // ---------------- Search / filter events ----------------
+  $("searchInput").addEventListener("input", renderProducts);
+  $("categoryFilter").addEventListener("change", renderProducts);
+  $("statusFilter").addEventListener("change", renderProducts);
+
+  // ---------------- Navigation ----------------
+  var titles = {
+    dashboard: ["Dashboard", "Overview of your warehouse inventory"],
+    products: ["Products", "Add, edit and organize your inventory"],
+    binmap: ["Bin Map", "Visual layout of your storage zones"],
+    restock: ["Restock Predictor", "Forecast when items will run out"],
+    activity: ["Activity Log", "Recent changes to your inventory"]
+  };
+  document.querySelectorAll(".nav-item").forEach(function (item) {
+    item.addEventListener("click", function () {
+      var view = item.getAttribute("data-view");
+      document.querySelectorAll(".nav-item").forEach(function (n) { n.classList.remove("active"); });
+      item.classList.add("active");
+      document.querySelectorAll(".view").forEach(function (v) { v.classList.remove("active"); });
+      $("view-" + view).classList.add("active");
+      $("pageTitle").textContent = titles[view][0];
+      $("pageSub").textContent = titles[view][1];
+      closeSidebar();
+    });
+  });
+
+  // ---------------- Mobile sidebar ----------------
+  function openSidebar() { $("sidebar").classList.add("open"); $("scrim").classList.add("open"); }
+  function closeSidebar() { $("sidebar").classList.remove("open"); $("scrim").classList.remove("open"); }
+  $("hamburger").addEventListener("click", openSidebar);
+  $("scrim").addEventListener("click", closeSidebar);
+
+  // ---------------- Seed demo data (first run only) ----------------
+  function seedIfEmpty() {
+    if (localStorage.getItem(K_PRODUCTS) !== null) return;
+    var demo = [
+      { name: "Steel Bracket M8", sku: "SB-M8-001", category: "Hardware", quantity: 320, price: 1.25, bin_location: "A1", reorder_threshold: 100, usage_rate: 12 },
+      { name: "Hex Bolt 20mm", sku: "HB-20-114", category: "Hardware", quantity: 45, price: 0.35, bin_location: "A1", reorder_threshold: 80, usage_rate: 20 },
+      { name: "Cardboard Box L", sku: "CB-L-500", category: "Packaging", quantity: 210, price: 0.9, bin_location: "B2", reorder_threshold: 150, usage_rate: 30 },
+      { name: "Bubble Wrap Roll", sku: "BW-ROLL-01", category: "Packaging", quantity: 8, price: 14.5, bin_location: "B2", reorder_threshold: 15, usage_rate: 1.5 },
+      { name: "Safety Gloves L", sku: "SG-L-props", category: "Safety", quantity: 120, price: 3.75, bin_location: "C3", reorder_threshold: 40, usage_rate: 4 },
+      { name: "LED Work Light", sku: "LED-WL-220", category: "Electrical", quantity: 18, price: 29.99, bin_location: "D1", reorder_threshold: 10, usage_rate: 0.5 },
+      { name: "Pallet Wrap Film", sku: "PW-FILM-9", category: "Packaging", quantity: 0, price: 22.0, bin_location: "B3", reorder_threshold: 12, usage_rate: 2 }
+    ];
+    demo.forEach(function (d) { d.id = uid(); });
+    setProducts(demo);
+    var log = [
+      { type: "add", text: "Seeded 7 demo products", time: Date.now() }
+    ];
+    write(K_LOG, log);
+  }
+
+  // ---------------- Init ----------------
+  seedIfEmpty();
+  if (currentUser()) { enterApp(); }
+  else { authScreen.style.display = "flex"; appEl.style.display = "none"; }
+
+})();
+</script>
+</body>
+</html>
